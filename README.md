@@ -62,7 +62,7 @@ A full-stack wellness session platform built with Node.js, Express, MongoDB, and
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/aryanrandomnohere/Arvyax.git
 cd arvyax-wellness-platform
 ```
 
@@ -347,7 +347,7 @@ Authorization: Bearer <jwt_token>
 
 ## 🚀 Deployment
 
-### Backend Deployment (Render/Railway)
+### Backend Deployment (Render)
 1. Connect your GitHub repository
 2. Set environment variables:
    - `MONGODB_URI`: Your MongoDB Atlas connection string
@@ -424,50 +424,3 @@ npm run server
 npm run client
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**MongoDB Connection Failed**
-- Ensure Docker is running
-- Check if MongoDB container is up: `docker ps`
-- Restart container: `docker-compose restart mongodb`
-
-**Frontend Not Loading**
-- Check if backend is running on port 5000
-- Verify proxy configuration in package.json
-- Clear browser cache and restart
-
-**Authentication Issues**
-- Check JWT_SECRET is set in backend .env
-- Verify token is being sent in Authorization header
-- Clear localStorage and try logging in again
-
-**Auto-save Not Working**
-- Check browser console for errors
-- Verify backend is responding to save-draft endpoint
-- Ensure form has required fields filled
-
-## 📞 Support
-
-For issues and questions:
-1. Check the troubleshooting section above
-2. Review the API documentation
-3. Check browser console and network tabs
-4. Verify all environment variables are set correctly
-
----
-
-**Built with ❤️ for Arvyax Wellness Platform**
