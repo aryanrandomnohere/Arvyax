@@ -47,9 +47,8 @@ const validateSessionDraft = [
     .isArray()
     .withMessage('Tags must be an array'),
   body('jsonFileUrl')
-    .notEmpty()
-    .trim()
-    .withMessage('JSON file URL is required'),
+    .optional()
+    .trim(),
   handleValidationErrors
 ];
 
@@ -74,9 +73,8 @@ const validateSessionUpdate = [
     .withMessage('Tags must be an array'),
   body('jsonFileUrl')
     .optional()
-    .notEmpty()
     .trim()
-    .withMessage('JSON file URL cannot be empty'),
+    .customSanitizer(value => value || ''), // Convert null/undefined to empty string
   handleValidationErrors
 ];
 

@@ -87,7 +87,7 @@ const SessionEditor = () => {
 
     const timeoutId = setTimeout(() => {
       autoSave();
-    }, 5000); // Auto-save after 5 seconds of inactivity
+    }, 3000); // Auto-save after 5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
   }, [formData, hasUnsavedChanges, autoSave]);

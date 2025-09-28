@@ -78,7 +78,7 @@ const saveDraftSession = async (req, res) => {
         { 
           title, 
           tags, 
-          jsonFileUrl, 
+          jsonFileUrl:jsonFileUrl || "", 
           updatedAt: new Date() 
         },
         { new: true, runValidators: true }
@@ -93,7 +93,7 @@ const saveDraftSession = async (req, res) => {
         userId: req.user._id,
         title,
         tags,
-        jsonFileUrl,
+        jsonFileUrl:jsonFileUrl||"",
         status: 'draft'
       });
       await session.save();

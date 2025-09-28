@@ -19,7 +19,6 @@ const sessionSchema = new mongoose.Schema({
   }],
   jsonFileUrl: {
     type: String,
-    required: true,
     trim: true
   },
   status: {
@@ -39,8 +38,12 @@ const sessionSchema = new mongoose.Schema({
 
 // Update the updatedAt field before saving
 sessionSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
+  try {
+    this.updatedAt = new Date();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Index for better query performance
