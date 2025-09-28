@@ -10,14 +10,14 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN,
   credentials: true
 }));
 app.use(express.json());
 
 // MongoDB Connection
 console.log(process.env.MONGODB_URI)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://root:example@localhost:27017/';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
