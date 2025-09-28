@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
@@ -18,10 +18,14 @@ const SessionEditor = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [sessionId, setSessionId] = useState(id || null);
   const [hasCreatedDraft, setHasCreatedDraft] = useState(false);
+  
+  // Use ref to store the latest auto-save timeout
+  const autoSaveTimeoutRef = useRef(null);
 
   // Auto-save functionality
-  const autoSave = useCallback(async () => {
-    if (!formData.title.trim() || !formData.jsonFileUrl.trim()) {
+  const autoSave = useCallback(async (isCreatingNew = false) => {
+    // Only require title for auto-save
+    if (!formData.title.trim()) {
       return;
     }
 
@@ -32,6 +36,14 @@ const SessionEditor = () => {
 
     try {
       setSaving(true);
+      
+      // Show appropriate status message
+      if (isCreatingNew && !sessionId) {
+        setAutoSaveStatus('Creating draft...');
+      } else {
+        setAutoSaveStatus('Auto-saving...');
+      }
+
       const tagsArray = formData.tags 
         ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         : [];
@@ -39,7 +51,7 @@ const SessionEditor = () => {
       const response = await axios.post('/api/sessions/my-sessions/save-draft', {
         title: formData.title,
         tags: tagsArray,
-        jsonFileUrl: formData.jsonFileUrl,
+        jsonFileUrl: formData.jsonFileUrl || '', // Allow empty URL for drafts
         sessionId: sessionId || undefined
       });
 
@@ -55,7 +67,7 @@ const SessionEditor = () => {
       setHasUnsavedChanges(false);
       
       // Show success toast
-      toast.success('Auto-saved', {
+      toast.success(isCreatingNew && !sessionId ? 'Draft created' : 'Auto-saved', {
         duration: 2000,
         position: 'top-right',
         style: {
@@ -81,21 +93,37 @@ const SessionEditor = () => {
     }
   }, [formData, sessionId, hasCreatedDraft, navigate]);
 
-  // Debounced auto-save effect
+  // Real-time auto-save effect - triggers immediately while typing
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
+    // Clear any existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
 
-    const timeoutId = setTimeout(() => {
-      autoSave();
-    }, 5000); // Auto-save after 5 seconds of inactivity
+    // Only auto-save if we have a title and there are unsaved changes
+    if (!hasUnsavedChanges || !formData.title.trim()) {
+      return;
+    }
 
-    return () => clearTimeout(timeoutId);
-  }, [formData, hasUnsavedChanges, autoSave]);
+    // Set a shorter timeout for more responsive auto-saving
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      const isCreatingNew = !sessionId && !hasCreatedDraft;
+      autoSave(isCreatingNew);
+    }, 1000); // Reduced from 5000ms to 1000ms for faster response
+
+    // Cleanup function
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData, hasUnsavedChanges, autoSave, sessionId, hasCreatedDraft]);
 
   // Initialize sessionId when we have an id from URL
   useEffect(() => {
     if (id && !sessionId) {
       setSessionId(id);
+      setHasCreatedDraft(true); // Existing sessions already have a draft
     }
   }, [id, sessionId]);
 
@@ -133,12 +161,12 @@ const SessionEditor = () => {
       [name]: value
     }));
     setHasUnsavedChanges(true);
-    setAutoSaveStatus('Unsaved changes');
+    setAutoSaveStatus('Editing...');
   };
 
   const handleSaveDraft = async () => {
-    if (!formData.title.trim() || !formData.jsonFileUrl.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!formData.title.trim()) {
+      toast.error('Please enter a session title');
       return;
     }
 
@@ -245,7 +273,8 @@ const SessionEditor = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {autoSaveStatus && (
             <span style={{ 
-              color: autoSaveStatus.includes('failed') ? '#ef4444' : '#10b981',
+              color: autoSaveStatus.includes('failed') ? '#ef4444' : 
+                    autoSaveStatus.includes('Editing') ? '#f59e0b' : '#10b981',
               fontSize: '0.875rem'
             }}>
               {autoSaveStatus}
@@ -301,7 +330,7 @@ const SessionEditor = () => {
 
           <div className="form-group">
             <label htmlFor="jsonFileUrl" className="form-label">
-              JSON File URL *
+              JSON File URL {!sessionId && '*'}
             </label>
             <input
               type="url"
@@ -311,14 +340,14 @@ const SessionEditor = () => {
               onChange={handleChange}
               className="form-input"
               placeholder="https://example.com/session-data.json"
-              required
+              required={!sessionId} // Only required for publishing, not for drafts
             />
             <div style={{ 
               color: '#6b7280', 
               fontSize: '0.75rem', 
               marginTop: '0.25rem' 
             }}>
-              URL to the JSON file containing your session data
+              URL to the JSON file containing your session data {sessionId ? '' : '(required for publishing)'}
             </div>
           </div>
 
@@ -341,7 +370,7 @@ const SessionEditor = () => {
             <button
               type="button"
               onClick={handleSaveDraft}
-              disabled={saving || !formData.title.trim() || !formData.jsonFileUrl.trim()}
+              disabled={saving || !formData.title.trim()}
               className="btn btn-secondary"
             >
               {saving ? 'Saving...' : 'Save as Draft'}
@@ -370,9 +399,10 @@ const SessionEditor = () => {
       }}>
         <strong>💡 Tips:</strong>
         <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-          <li>Your session will auto-save as a draft every 5 seconds while you type</li>
+          <li>Your session will auto-save as a draft every 1 second while you type</li>
+          <li>Auto-save starts as soon as you enter a title</li>
           <li>Use descriptive titles and relevant tags to help others find your sessions</li>
-          <li>Make sure your JSON file URL is publicly accessible</li>
+          <li>JSON file URL is required only for publishing, not for saving drafts</li>
           <li>You can edit published sessions, but changes will need to be saved as a new draft</li>
         </ul>
       </div>
